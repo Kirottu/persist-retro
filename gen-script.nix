@@ -38,9 +38,9 @@ lib.concatStrings (
       # TODO: Maybe consider dealing with symlinks properly
 
       if [ -f "${file.filePath}" ] && ! [ -L "${file.filePath}" ] && ! findmnt "${file.filePath}" >/dev/null; then
-        printf "Found existing file at '%s', copied to persistent location '%s' and moved to '%s'.\n" "${file.filePath}" "${file.persistentStoragePath}${file.filePath}" "${file.filePath}.bak"
+        printf "Found existing file at '%s', copied to persistent location '%s'.\n" "${file.filePath}" "${file.persistentStoragePath}${file.filePath}"
         cp -au "${file.filePath}" "${file.persistentStoragePath}${file.filePath}"
-        mv -f "${file.filePath}" "${file.filePath}.bak"
+        rm -f "${file.filePath}"
         chown "${file.parentDirectory.user}:${file.parentDirectory.group}" "${file.persistentStoragePath}${file.filePath}"
       fi
 
