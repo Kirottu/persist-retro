@@ -1,31 +1,34 @@
-lib: ms:
-''
-  try_init_with_existing(){
-    src=$1
-    dest=$2
-    # If the directory doesn't exist in persistence
-    # and already exists in the target
-    # initialize it by moving the existing directory
-    if [ -e "$src" ] && ! [ -e "$dest" ]
-    then
-      # ensure parents exist
-      mkdir -p "$dest"
-      # rmdir fails if directory not empty so this is fairly safe
-      rmdir "$dest"
-      echo moved "$src" to "$dest" at $(date) >> /tmp/persist-retro-log
-      mv "$src" "$dest"
-    fi
-  }
-''
-+ lib.strings.concatStrings (
-  builtins.map (
-    { mount_path, root_path }:
-    let
-      dest = mount_path + "/" + root_path;
-      source = root_path;
-    in
+{
+  lib,
+  dirs,
+  files,
+}:
+lib.concatStrings (
+  lib.flatten [
     ''
-      try_init_with_existing "${source}" "${dest}"
+      #!/usr/bin/env bash
+
+      set -o nounset            # Fail on use of unset variable.
+      set -o errexit            # Exit on command failure.
+      set -o pipefail           # Exit on failure of any command in a pipeline.
+      set -o errtrace           # Trap errors in functions and subshells.
+      shopt -s inherit_errexit  # Inherit the errexit option status in subshells.
+
+      trap 'echo Error when executing $BASH_COMMAND at line $LINENO! >&2' ERR
+
     ''
-  ) ms
+    (builtins.map (dir: ''
+      # Check if existing directory exists and has files in it
+      # Also verify that it is not a mountpoint since that would most
+      # likely mean it is already correctly managed by impermanence
+      if [ -n "$(ls -A '${dir.dirPath}' 2>/dev/null)" ] && $(mountpoint -q --nofollow "${dir.dirPath}"); then
+        # Copy files in archive and update mode, updating any possibly existing files
+        # and preserving permissions
+        cp -au "${dir.dirPath}/*" "${dir.persistentStoragePath}/${dir.dirPath}/"
+      fi
+    '') dirs)
+    (builtins.map (file: ''
+
+    '') files)
+  ]
 )
