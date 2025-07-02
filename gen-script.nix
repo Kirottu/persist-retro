@@ -1,5 +1,4 @@
-lib:
-ms:
+lib: ms:
 ''
   try_init_with_existing(){
     src=$1
@@ -17,15 +16,16 @@ ms:
       mv "$src" "$dest"
     fi
   }
-'' +
-lib.strings.concatStrings
-  (builtins.map
-    ({ mount_path, root_path }:
-      let
-        dest = mount_path + "/" + root_path;
-        source = root_path;
-      in
-      "try_init_with_existing ${source} ${dest}\n"
-    )
-    ms
-  )
+''
++ lib.strings.concatStrings (
+  builtins.map (
+    { mount_path, root_path }:
+    let
+      dest = mount_path + "/" + root_path;
+      source = root_path;
+    in
+    ''
+      try_init_with_existing "${source}" "${dest}"
+    ''
+  ) ms
+)
