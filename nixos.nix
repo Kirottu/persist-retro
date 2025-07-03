@@ -1,5 +1,6 @@
 {
   config,
+  pkgs,
   lib,
   ...
 }:
@@ -10,23 +11,24 @@ let
   );
   files = lib.flatten (lib.mapAttrsToList (name: value: value.files) config.environment.persistence);
 
-  script = genScript {
+  fileChecks = genScript {
     inherit
       lib
       dirs
       files
       ;
   };
+  script = pkgs.writeShellScript "persist-retro-copy-files" ''
+    _status=0
+    trap "_status=1" ERR
+    ${fileChecks}
+    exit $_status
+  '';
 in
 {
   system.activationScripts.persist-files.deps = [ "persist-retro" ];
   system.activationScripts.persist-retro = {
-    text = ''
-      _status=0
-      trap "_status=1" ERR
-      ${script}
-      exit $_status
-    '';
+    text = "${script}";
     deps = [ "createPersistentStorageDirs" ];
   };
 }
